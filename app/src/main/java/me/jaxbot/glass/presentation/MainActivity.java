@@ -10,7 +10,6 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -25,15 +24,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * An {@link Activity} showing a tuggable "Hello World!" card.
- * <p>
- * The main content view is composed of a one-card {@link CardScrollView} that provides tugging
- * feedback to the user when swipe gestures are detected.
- * If your Glassware intends to intercept swipe gestures, you should set the content view directly
- * and use a {@link com.google.android.glass.touchpad.GestureDetector}.
- * @see <a href="https://developers.google.com/glass/develop/gdk/touch">GDK Developer Guide</a>
- */
 public class MainActivity extends Activity {
     final String url = "http://192.168.1.104:9810/";
 
@@ -63,7 +53,7 @@ public class MainActivity extends Activity {
                     while ((line = bufferedReader.readLine()) != null) {
                         if (line.equals("")) continue;
                         mCards.add(new CardBuilder(activity, CardBuilder.Layout.TEXT)
-                                        .setText(line)
+                            .setText(line)
                         );
                     }
 
@@ -100,12 +90,10 @@ public class MainActivity extends Activity {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 if (i < lastPosition) {
-                    Log.i("T", "Previous");
-                    doHTTPRequest("prev");
+                    doHTTPRequestAsync("prev");
                 }
                 if (i > lastPosition) {
-                    Log.i("T", "Next");
-                    doHTTPRequest("next");
+                    doHTTPRequestAsync("next");
                 }
                 lastPosition = i;
             }
@@ -140,6 +128,24 @@ public class MainActivity extends Activity {
         super.onPause();
     }
 
+    void doHTTPRequestAsync(final String cmd)
+    {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    DefaultHttpClient httpclient = new DefaultHttpClient();
+                    HttpGet httpget = new HttpGet(url + cmd);
+
+                    httpclient.execute(httpget);
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+                return null;
+            }
+        }.execute(null, null, null);
+    }
+
     private class MyCardScrollAdapter extends CardScrollAdapter {
 
         @Override
@@ -171,24 +177,6 @@ public class MainActivity extends Activity {
         public View getView(int position, View convertView, ViewGroup parent) {
             return mCards.get(position).getView(convertView, parent);
         }
-    }
-
-    void doHTTPRequest(final String cmd)
-    {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                try {
-                    DefaultHttpClient httpclient = new DefaultHttpClient();
-                    HttpGet httpget = new HttpGet(url + cmd);
-
-                    httpclient.execute(httpget);
-                } catch (Exception e) {
-                    System.out.println(e);
-                }
-                return null;
-            }
-        }.execute(null, null, null);
     }
 
 }
